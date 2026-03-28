@@ -1,0 +1,1378 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="home-content">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1>Certificate Verification System</h1>
+            <p class="hero-subtitle">Secure. Efficient. Reliable.</p>
+            <div class="hero-actions">
+                <div class="button-container">
+                    <a href="{{ url_for('login') }}" class="btn btn-action">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-action btn-outline">
+                        <i class="fas fa-user-plus"></i>
+                        Create Account
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="service-info-section">
+                <!-- Hero Welcome Section with Upload -->
+                <div class="hero-welcome">
+                    <div class="hero-content">
+                        <div class="hero-text">
+                            <h1>Try Our Certificate Verification</h1>
+                            <p class="hero-subtitle">Test our advanced validation system without signing up</p>
+                        </div>
+                        
+                        <!-- Upload Certificate Form Card -->
+                        <div class="upload-card">
+                            <div class="upload-card-header">
+                                <h2><i class="fas fa-file-upload"></i> Upload Certificate</h2>
+                            </div>
+                            
+                            <!-- File info display (initially hidden) -->
+                            <div class="file-info-display" id="file-info-display" style="display: none;">
+                                <div class="file-info-content">
+                                    <div class="file-info-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="file-info-text">
+                                        <p class="file-name" id="info-filename">No file selected</p>
+                                        <p class="file-size" id="info-filesize">0 KB</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form action="{{ url_for('verify_anonymous') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                                <div class="form-info-box">
+                                    <div class="info-item">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Supported formats: PDF, JPG, JPEG, PNG</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>Maximum file size: 5MB</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="file-input-container">
+                                        <input type="file" name="certificate" id="certificate" class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <label for="certificate" class="file-label">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <span>Choose a file or drag it here</span>
+                                        </label>
+                                        <div class="file-size-error" style="display: none;">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            File size exceeds 5MB limit!
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Upload progress bar (hidden by default) -->
+                                <div class="upload-progress" style="display: none;">
+                                    <div class="progress-container">
+                                        <div class="progress-bar" id="upload-progress-bar"></div>
+                                    </div>
+                                    <div class="progress-text">
+                                        <span id="progress-percentage">0%</span> - Uploading <span id="progress-filename"></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Upload success message (hidden by default) -->
+                                <div class="upload-success" style="display: none;">
+                                    <div class="success-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="success-message">
+                                        <h4>Upload Successful!</h4>
+                                        <p>File: <span id="success-filename"></span></p>
+                                        <p>Size: <span id="success-filesize"></span></p>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary upload-btn" id="submit-btn">
+                                    <i class="fas fa-check"></i> Verify Certificate
+                                </button>
+                            </form>
+                            
+                            <div class="sign-in-notice">
+                                <p><i class="fas fa-exclamation-circle"></i> Note: Verification results for non-logged in users are temporary and will not be saved to your account.</p>
+                                <p>To save your verification history, <a href="{{ url_for('login') }}">sign in</a> or <a href="{{ url_for('register') }}">create an account</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Secure Verification</h3>
+                        <p>Our service uses advanced algorithms to verify the authenticity of your certificates with military-grade security.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Instant Results</h3>
+                        <p>Get verification results instantly with detailed information about your certificate's validity.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h3>Verification History</h3>
+                        <p>Keep track of all your certificate verifications with our comprehensive history tracking system.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3>Privacy Protected</h3>
+                        <p>Your certificates and personal information are kept private and secure with our encrypted storage system.</p>
+                    </div>
+                </div>
+                
+                <div class="cta-section">
+                    <h2>Why Verify Your Certificates?</h2>
+                    <p>Certificate verification helps protect against fraud and ensures that your qualifications are recognized by employers and institutions worldwide.</p>
+                    <p>Our service provides a tamper-proof verification process that is trusted by organizations globally.</p>
+                    <a href="{{ url_for('register') }}" class="btn btn-cta">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </a>
+                </div>
+                  <div class="testimonials">
+                    <h3 class="testimonial-title">What Our Users Say About Us</h3>
+                    <div class="testimonial-container">
+                        <div class="testimonial-slider" id="testimonialSlider">
+                            <!-- Testimonial 1 -->
+                            <div class="testimonial-card">
+                                <div class="testimonial-header">
+                                    <div class="rating">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>                                <div class="testimonial-quote">
+                                    <i class="fas fa-quote-left"></i>
+                                    <p>This verification system works perfectly! It has been instrumental in validating the authenticity of certificates reliably and efficiently. <i class="fas fa-quote-right"></i></p>
+                                </div>
+                                <div class="testimonial-author">
+                                    <div class="author-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="author-info">
+                                        <h4>Nahid Ansari</h4>
+                                        <p>Student, DYPIT</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Testimonial 2 -->
+                            <div class="testimonial-card">
+                                <div class="testimonial-header">
+                                    <div class="rating">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </div>
+                                </div>                                <div class="testimonial-quote">
+                                    <i class="fas fa-quote-left"></i>
+                                    <p>As an educational institution, we needed a secure way to verify certificates. This platform exceeded our expectations with its advanced features and user-friendly interface. <i class="fas fa-quote-right"></i></p>
+                                </div>
+                                <div class="testimonial-author">
+                                    <div class="author-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="author-info">
+                                        <h4>Dr. Priya Sharma</h4>
+                                        <p>University Registrar</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Testimonial 3 -->
+                            <div class="testimonial-card">
+                                <div class="testimonial-header">
+                                    <div class="rating">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>                                <div class="testimonial-quote">
+                                    <i class="fas fa-quote-left"></i>
+                                    <p>The blockchain-based verification gives me peace of mind when sharing my credentials. I can confidently present my certificates knowing they can be instantly verified. <i class="fas fa-quote-right"></i></p>
+                                </div>
+                                <div class="testimonial-author">
+                                    <div class="author-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="author-info">
+                                        <h4>Rajesh Kumar</h4>
+                                        <p>IT Professional</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Slider Navigation -->
+                        <div class="testimonial-nav">
+                            <button class="nav-btn prev" onclick="moveTestimonial(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="testimonial-dots" id="testimonialDots">
+                                <span class="dot active" onclick="jumpToTestimonial(0)"></span>
+                                <span class="dot" onclick="jumpToTestimonial(1)"></span>
+                                <span class="dot" onclick="jumpToTestimonial(2)"></span>
+                            </div>
+                            <button class="nav-btn next" onclick="moveTestimonial(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Home Page Styles */
+.home-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--card-bg) 100%);
+}
+
+.home-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 3rem;
+    position: relative;
+}
+
+/* Hero Section */
+.hero-section {
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    background: rgba(0, 123, 255, 0.05);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 2.5rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.button-container {
+    display: inline-flex;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action {
+    min-width: 180px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    border: none;
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.btn-action.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-action.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Info Section */
+.info-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    color: var(--text-color);
+}
+
+.service-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 3rem;
+}
+
+.info-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 1rem 0;
+}
+
+.feature-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.feature-icon i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.feature-card h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1.3rem;
+    color: var(--primary-color);
+}
+
+.feature-card p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.cta-section {
+    background: rgba(0, 123, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1rem 0;
+    text-align: center;
+    border: 1px solid rgba(0, 123, 255, 0.2);
+}
+
+.cta-section h2 {
+    margin: 0 0 1rem;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+}
+
+.cta-section p {
+    margin: 0 0 1rem;
+    line-height: 1.6;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-cta {
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.btn-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.testimonials {
+    margin-top: 3rem;
+    padding: 2rem 0;
+    background-color: var(--bg-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.testimonial-title {
+    margin: 0 0 2rem;
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--primary-color);
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.testimonial-title:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    border-radius: 2px;
+}
+
+.testimonial-container {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.testimonial-slider {
+    display: flex;
+    overflow: hidden;
+    scroll-behavior: smooth;
+    margin-bottom: 1.5rem;
+}
+
+.testimonial-card {
+    flex: 0 0 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-top: 4px solid var(--primary-color);
+    margin: 0 0.5rem;
+}
+
+.testimonial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.rating {
+    color: #FFD700;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+}
+
+.testimonial-quote {
+    position: relative;
+    padding: 1.5rem 0 1.5rem 2.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.testimonial-quote i.fa-quote-left,
+.testimonial-quote i.fa-quote-right {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    opacity: 0.6;
+}
+
+.testimonial-quote i.fa-quote-left {
+    position: absolute;
+    left: 0;
+    top: 1.5rem;
+}
+
+.testimonial-quote i.fa-quote-right {
+    margin-left: 5px;
+    vertical-align: super;
+}
+
+.testimonial-quote p {
+    margin: 0;
+    line-height: 1.8;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: #555;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.author-avatar {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    box-shadow: 0 3px 12px rgba(0, 123, 255, 0.15);
+}
+
+.author-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.testimonial-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.nav-btn {
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    color: var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+/* Dark mode styles for testimonials */
+[data-theme="dark"] .testimonials {
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .testimonial-card {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .testimonial-header {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .testimonial-title:after {
+    background: linear-gradient(to right, var(--primary-color), var(--primary-color));
+}
+
+[data-theme="dark"] .author-avatar {
+    background: rgba(74, 158, 255, 0.15);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .testimonial-quote {
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .testimonial-quote p {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .author-info h4 {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .author-info p {
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+[data-theme="dark"] .nav-btn {
+    background: var(--card-bg);
+    color: var(--primary-color);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .dot {
+    background: #555;
+}
+
+[data-theme="dark"] .dot.active {
+    background: var(--primary-color);
+}
+
+.nav-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+/* Additional responsive styles */
+@media (max-width: 768px) {
+    .testimonial-card {
+        padding: 1.5rem;
+    }
+    
+    .testimonial-quote p {
+        font-size: 1rem;
+    }
+    
+    .testimonial-title {
+        font-size: 1.6rem;
+    }
+}
+
+.author-avatar i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.author-info h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.author-info p {
+    margin: 0.25rem 0 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .home-content {
+        gap: 2rem;
+    }
+    
+    .info-feature-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+    }
+    
+    .service-info-section {
+        padding: 2rem;
+    }
+    
+    .info-feature-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-container {
+        padding: 1rem;
+    }
+    
+    .hero-section {
+        padding: 3rem 1rem;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .service-info-section {
+        padding: 1.5rem;
+    }
+    
+    .button-container {
+        flex-direction: row;
+        width: 100%;
+        gap: 1rem;
+    }
+    
+    .btn-action {
+        flex: 1;
+        min-width: auto;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+    }
+}
+
+/* Hero Welcome Section */
+.hero-welcome {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 12px;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+[data-theme="dark"] .hero-welcome {
+    background: #2d2d2d;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.hero-text {
+    margin-bottom: 2.5rem;
+}
+
+.hero-welcome h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+/* Upload Card */
+.upload-card {
+    background: rgba(0, 123, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    color: var(--text-color);
+    max-width: 700px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .upload-card {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border: none;
+}
+
+.upload-card-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.upload-card-header h2 {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* File info display */
+.file-info-display {
+    background-color: rgba(0,123,255,0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--primary-color);
+}
+
+.file-info-content {
+    display: flex;
+    align-items: center;
+}
+
+.file-info-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(0,123,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.file-info-text {
+    flex: 1;
+}
+
+.file-info-text .file-name {
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.file-info-text .file-size {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.form-info-box {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+[data-theme="dark"] .form-info-box {
+    background-color: rgba(0,123,255,0.1);
+    border: none;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.info-item:last-child {
+    justify-content: flex-end;
+}
+
+/* File Input Styles */
+.file-input-container {
+    position: relative;
+    margin-top: 0.5rem;
+}
+
+.file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 2rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+[data-theme="dark"] .file-label {
+    background-color: #3d3d3d;
+}
+
+.file-label:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(0,123,255,0.05);
+}
+
+[data-theme="dark"] .file-label:hover {
+    background-color: #4a4a4a;
+}
+
+.file-label i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.file-label span {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.file-size-error {
+    color: var(--error-color);
+    margin-top: 0.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.upload-btn {
+    margin-top: 1rem;
+    padding: 1rem;
+}
+
+/* Upload Progress Bar */
+.upload-progress {
+    margin: 1.5rem 0;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .upload-progress {
+    background: var(--bg-color);
+}
+
+.progress-container {
+    background-color: #f8f9fa;
+    height: 1rem;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), #0056b3);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Upload Success Message */
+.upload-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(40,167,69,0.05);
+    border: 1px solid var(--success-color);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    animation: fadeIn 0.5s ease;
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 2.5rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.success-message {
+    text-align: center;
+}
+
+.success-message h4 {
+    color: var(--success-color);
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+}
+
+.success-message p {
+    margin: 0.35rem 0;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.sign-in-notice {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+[data-theme="dark"] .sign-in-notice {
+    background-color: rgba(0,123,255,0.1);
+    border: none;
+}
+
+.sign-in-notice p {
+    margin: 0.5rem 0;
+}
+
+.sign-in-notice a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.sign-in-notice a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .upload-card {
+        padding: 1.5rem;
+    }
+    
+    .file-label {
+        padding: 2rem 1rem;
+    }
+    
+    .form-info-box {
+        flex-direction: column;
+    }
+    
+    .info-item:last-child {
+        justify-content: flex-start;
+    }
+}
+</style>
+
+<script>
+// Simple parallax effect for feature cards
+const featureCards = document.querySelectorAll('.feature-card');
+if (featureCards.length > 0) {
+    window.addEventListener('mousemove', function(e) {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        
+        featureCards.forEach(card => {
+            const offsetX = (x - 0.5) * 5;
+            const offsetY = (y - 0.5) * 5;
+            card.style.transform = `translateX(${offsetX}px) translateY(${offsetY}px)`;
+        });
+    });
+}
+
+// File upload functionality
+const fileInput = document.getElementById('certificate');
+const submitBtn = document.getElementById('submit-btn');
+const fileLabel = document.querySelector('.file-label');
+const fileSizeError = document.querySelector('.file-size-error');
+const uploadForm = document.querySelector('.upload-form');
+const uploadProgress = document.querySelector('.upload-progress');
+const progressBar = document.getElementById('upload-progress-bar');
+const progressPercentage = document.getElementById('progress-percentage');
+const progressFilename = document.getElementById('progress-filename');
+const uploadSuccess = document.querySelector('.upload-success');
+const successFilename = document.getElementById('success-filename');
+const successFilesize = document.getElementById('success-filesize');
+const fileInfoDisplay = document.getElementById('file-info-display');
+const infoFilename = document.getElementById('info-filename');
+const infoFilesize = document.getElementById('info-filesize');
+
+// Max file size: 5MB in bytes
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Testimonial Slider functionality
+let currentTestimonial = 0;
+const testimonials = document.querySelectorAll('.testimonial-card');
+const dots = document.querySelectorAll('.dot');
+let testimonialInterval;
+let isPaused = false;
+
+// Initialize the slider
+function initTestimonialSlider() {
+    // Hide all testimonials except the first one
+    testimonials.forEach((testimonial, index) => {
+        if (index !== 0) {
+            testimonial.style.display = 'none';
+        }
+    });
+
+    // Add mouse enter/leave events to pause/resume rotation
+    const testimonialContainer = document.querySelector('.testimonial-container');
+    testimonialContainer.addEventListener('mouseenter', () => {
+        isPaused = true;
+    });
+    
+    testimonialContainer.addEventListener('mouseleave', () => {
+        isPaused = false;
+    });
+
+    // Start auto rotation
+    testimonialInterval = setInterval(() => {
+        if (!isPaused) {
+            moveTestimonial(1);
+        }
+    }, 7000); // Change testimonial every 7 seconds
+}
+
+// Move to next or previous testimonial
+function moveTestimonial(direction) {
+    // Hide current testimonial
+    testimonials[currentTestimonial].style.display = 'none';
+    dots[currentTestimonial].classList.remove('active');
+    
+    // Calculate new testimonial index
+    currentTestimonial = (currentTestimonial + direction + testimonials.length) % testimonials.length;
+    
+    // Show new testimonial
+    testimonials[currentTestimonial].style.display = 'block';
+    dots[currentTestimonial].classList.add('active');
+}
+
+// Jump to specific testimonial
+function jumpToTestimonial(index) {
+    // Hide current testimonial
+    testimonials[currentTestimonial].style.display = 'none';
+    dots[currentTestimonial].classList.remove('active');
+    
+    // Set and show new testimonial
+    currentTestimonial = index;
+    testimonials[currentTestimonial].style.display = 'block';
+    dots[currentTestimonial].classList.add('active');
+}
+
+// Initialize the testimonial slider when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('testimonialSlider')) {
+        initTestimonialSlider();
+    }
+});
+
+if (fileInput) {
+    fileInput.addEventListener('change', function() {
+        const isValid = validateFileSize();
+        
+        if (isValid) {
+            // Hide file info display
+            fileInfoDisplay.style.display = 'none';
+            
+            // Show progress bar and hide success message
+            uploadProgress.style.display = 'block';
+            uploadSuccess.style.display = 'none';
+            
+            const file = fileInput.files[0];
+            // Update filename in progress bar
+            progressFilename.textContent = file.name;
+            
+            // Simulate upload progress
+            simulateUploadProgress();
+        }
+    });
+}
+
+function validateFileSize() {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = file.size;
+        const fileName = file.name;
+        
+        // Format file size for display
+        let formattedSize;
+        if (fileSize < 1024) {
+            formattedSize = `${fileSize} bytes`;
+        } else if (fileSize < 1024 * 1024) {
+            formattedSize = `${(fileSize / 1024).toFixed(2)} KB`;
+        } else {
+            formattedSize = `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        
+        // Update file info display
+        infoFilename.textContent = fileName;
+        infoFilesize.textContent = formattedSize;
+        fileInfoDisplay.style.display = 'block';
+        
+        if (fileSize > MAX_FILE_SIZE) {
+            fileSizeError.style.display = 'block';
+            submitBtn.disabled = true;
+            fileLabel.style.borderColor = 'var(--error-color)';
+            return false;
+        } else {
+            fileSizeError.style.display = 'none';
+            submitBtn.disabled = false;
+            fileLabel.style.borderColor = 'var(--success-color)';
+            
+            // Update file name display
+            fileLabel.querySelector('span').textContent = fileName;
+            return true;
+        }
+    } else {
+        // Hide file info if no file selected
+        fileInfoDisplay.style.display = 'none';
+        return false;
+    }
+}
+
+function simulateUploadProgress() {
+    let progress = 0;
+    progressBar.style.width = '0%';
+    progressPercentage.textContent = '0%';
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            // Show success message
+            setTimeout(() => {
+                showUploadSuccess();
+            }, 500);
+        }
+        
+        // Update progress bar
+        progressBar.style.width = `${progress}%`;
+        progressPercentage.textContent = `${Math.round(progress)}%`;
+    }, 50);
+}
+
+function showUploadSuccess() {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        // Format file size
+        let formattedSize;
+        if (file.size < 1024) {
+            formattedSize = `${file.size} bytes`;
+        } else if (file.size < 1024 * 1024) {
+            formattedSize = `${(file.size / 1024).toFixed(2)} KB`;
+        } else {
+            formattedSize = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        
+        // Update success message
+        successFilename.textContent = file.name;
+        successFilesize.textContent = formattedSize;
+        
+        // Hide progress and show success
+        uploadProgress.style.display = 'none';
+        uploadSuccess.style.display = 'flex';
+    }
+}
+
+// Drag and drop functionality
+if (fileLabel) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        fileLabel.style.borderColor = 'var(--primary-color)';
+        fileLabel.style.backgroundColor = 'rgba(0,123,255,0.1)';
+    }
+
+    function unhighlight(e) {
+        if (!fileInput.files.length) {
+            fileLabel.style.borderColor = 'var(--border-color)';
+            fileLabel.style.backgroundColor = '#f8f9fa';
+        }
+    }
+
+    fileLabel.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        
+        const isValid = validateFileSize();
+        
+        if (isValid) {
+            // Hide file info display
+            fileInfoDisplay.style.display = 'none';
+            
+            // Show progress bar and hide success message
+            uploadProgress.style.display = 'block';
+            uploadSuccess.style.display = 'none';
+            
+            const file = fileInput.files[0];
+            // Update filename in progress bar
+            progressFilename.textContent = file.name;
+            
+            // Simulate upload progress
+            simulateUploadProgress();
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1047 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <!-- Dashboard Header -->
+    <section class="dashboard-header">
+        <div class="admin-welcome">
+            <div class="welcome-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="welcome-text">
+                <h1>Admin Dashboard</h1>
+                <p>Manage users and monitor system activity</p>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Total Users</h3>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Total Verifications</h3>
+                    <div class="stat-value">{{ total_verifications }}</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Valid Certificates</h3>
+                    <div class="stat-value">{{ valid_certificates }}</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ (valid_certificates / total_verifications * 100) if total_verifications > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Invalid Certificates</h3>
+                    <div class="stat-value">{{ total_verifications - valid_certificates }}</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ ((total_verifications - valid_certificates) / total_verifications * 100) if total_verifications > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Users Management Section -->
+    <section class="admin-section users-section">
+        <div class="section-header">
+            <h2><i class="fas fa-users"></i> User Management</h2>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="userSearch" placeholder="Search users..." onkeyup="filterUsers()">
+                </div>
+                <button id="addUserBtn" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Add New User
+                </button>
+            </div>
+        </div>
+        
+        <!-- Add User Modal -->
+        <div id="addUserModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New User</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="form-group">
+                            <label for="username">Username <span class="required">*</span></label>
+                            <input type="text" id="username" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email <span class="required">*</span></label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password <span class="required">*</span></label>
+                            <input type="password" id="password" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" class="form-control">
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="isAdmin">
+                            <label for="isAdmin">Administrator</label>
+                        </div>
+                        <div class="form-error" id="formError"></div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-cancel" id="cancelUserBtn">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table class="admin-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Full Name</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                        <th>Total Verifications</th>
+                        <th>Valid Certificates</th> 
+                        <th>Invalid Certificates</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    {% if not user.is_admin %}
+                    <tr data-user-id="{{ user.id }}">
+                        <td>
+                            <div class="user-info">
+                                <i class="fas fa-user-circle"></i>
+                                {{ user.username }}
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.full_name or 'Not set' }}</td>
+                        <td>
+                            <span class="status-badge {% if user.is_admin %}admin{% else %}user{% endif %}">
+                                {{ 'Admin' if user.is_admin else 'User' }}
+                            </span>
+                        </td>
+                        <td>{{ user.profile_created.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ user.total_verifications }}</td>
+                        <td>{{ user.valid_certificates }}</td>
+                        <td>{{ user.invalid_certificates }}</td>
+                        <td class="actions">
+                            <button class="btn-icon view-btn" onclick="viewUserDetails('{{ user.id }}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon delete-btn" onclick="deleteUser('{{ user.id }}')" title="Delete User">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Recent Verifications Section -->
+    <section class="admin-section verifications-section">
+        <div class="section-header">
+            <h2><i class="fas fa-history"></i> Recent Verifications</h2>
+        </div>
+        <div class="verification-grid">
+            {% for verification in recent_verifications %}
+            <div class="verification-card">
+                <div class="verification-header">
+                    <span class="status-badge {{ verification.status }}">
+                        {% if verification.status == 'valid' %}
+                            <i class="fas fa-check-circle"></i>
+                            Valid
+                        {% elif verification.status == 'invalid' %}
+                            <i class="fas fa-times-circle"></i>
+                            Invalid
+                        {% else %}
+                            <i class="fas fa-question-circle"></i>
+                            {{ verification.status }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="verification-content">
+                    <p class="filename"><i class="fas fa-file-alt"></i> {{ verification.filename }}</p>
+                    <p class="user"><i class="fas fa-user"></i> {{ verification.user.username }}</p>
+                    <p class="timestamp"><i class="fas fa-clock"></i> {{ verification.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                <div class="verification-footer">
+                    <a href="{{ url_for('view_verification', id=verification.id) }}" class="btn btn-view">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<style>
+/* Base Styles */
+.admin-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 0 2rem 0;
+}
+
+section {
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.admin-welcome {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.welcome-icon {
+    width: 70px;
+    height: 70px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.welcome-icon i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+}
+
+.welcome-text h1 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.8rem;
+}
+
+.welcome-text p {
+    margin: 0.5rem 0 0;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* Stats Cards */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon i {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+}
+
+.stat-details {
+    flex: 1;
+}
+
+.stat-details h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+/* Admin Sections */
+.admin-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--text-color);
+    font-size: 1.5rem;
+}
+
+.section-header h2 i {
+    color: var(--primary-color);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Search Box */
+.search-box {
+    position: relative;
+    width: 300px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color);
+    opacity: 0.5;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 1rem;
+    text-align: left;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table th {
+    font-weight: 600;
+    opacity: 0.8;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.admin-table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.admin-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* User Info */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.user-info i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.admin {
+    background: var(--primary-color);
+    color: white;
+}
+
+.status-badge.user {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-badge.valid {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.status-badge.invalid {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color);
+    transform: translateY(-2px);
+}
+
+.btn-cancel {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn-view {
+    background-color: rgba(74, 158, 255, 0.1);
+    color: var(--primary-color);
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-view:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.view-btn {
+    color: var(--primary-color);
+}
+
+.delete-btn {
+    color: var(--error-color);
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Verification Cards */
+.verification-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.verification-card {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.verification-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.verification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.verification-content {
+    margin: 1rem 0;
+}
+
+.verification-content p {
+    margin: 0.8rem 0;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.verification-content p i {
+    color: var(--primary-color);
+    width: 20px;
+    opacity: 0.8;
+}
+
+.verification-content .filename {
+    font-weight: 500;
+}
+
+.verification-content .user,
+.verification-content .timestamp {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.verification-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: modalFadeIn 0.3s;
+    position: relative;
+    margin: 0 auto;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.2rem;
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    line-height: 1;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+}
+
+.close-modal:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.required {
+    color: var(--error-color);
+}
+
+.form-error {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    min-height: 20px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-welcome {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+// User search functionality
+function filterUsers() {
+    const input = document.getElementById('userSearch');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('usersTable');
+    const rows = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < rows.length; i++) {
+        const username = rows[i].getElementsByTagName('td')[0].textContent;
+        const email = rows[i].getElementsByTagName('td')[1].textContent;
+        const fullName = rows[i].getElementsByTagName('td')[2].textContent;
+        
+        if (username.toLowerCase().includes(filter) ||
+            email.toLowerCase().includes(filter) ||
+            fullName.toLowerCase().includes(filter)) {
+            rows[i].style.display = '';
+        } else {
+            rows[i].style.display = 'none';
+        }
+    }
+}
+
+// Delete user functionality
+function deleteUser(userId) {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        fetch(`/admin/delete_user/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showToast('User deleted successfully', 'success');
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                row.remove();
+            } else {
+                showToast('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while deleting the user', 'error');
+        });
+    }
+}
+
+// View user details
+function viewUserDetails(userId) {
+    window.location.href = `/admin/user_details/${userId}`;
+}
+
+// Modal functionality
+const modal = document.getElementById('addUserModal');
+const addUserBtn = document.getElementById('addUserBtn');
+const closeModalBtn = document.querySelector('.close-modal');
+const cancelUserBtn = document.getElementById('cancelUserBtn');
+const addUserForm = document.getElementById('addUserForm');
+const formError = document.getElementById('formError');
+
+// Open modal
+addUserBtn.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+    addUserForm.reset();
+    formError.textContent = '';
+});
+
+// Close modal
+function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = ''; // Restore scrolling
+}
+
+closeModalBtn.addEventListener('click', closeModal);
+cancelUserBtn.addEventListener('click', closeModal);
+
+// Close when clicking outside
+window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+        // Keep modal open when clicking outside
+    }
+});
+
+// Create new user
+addUserForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formError.textContent = '';
+    
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const fullName = document.getElementById('fullName').value;
+    const isAdmin = document.getElementById('isAdmin').checked;
+    
+    // Basic validation
+    if (!username || !email || !password) {
+        formError.textContent = 'Please fill all required fields';
+        return;
+    }
+    
+    // Create user
+    fetch('/admin/create_user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            username,
+            email,
+            password,
+            full_name: fullName,
+            is_admin: isAdmin
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('User created successfully', 'success');
+            closeModal();
+            
+            // Add the new user to the table
+            const user = data.user;
+            const userRow = `
+                <tr data-user-id="${user.id}">
+                    <td>
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            ${user.username}
+                        </div>
+                    </td>
+                    <td>${user.email}</td>
+                    <td>${user.full_name || 'Not set'}</td>
+                    <td>
+                        <span class="status-badge ${user.is_admin ? 'admin' : 'user'}">
+                            ${user.is_admin ? 'Admin' : 'User'}
+                        </span>
+                    </td>
+                    <td>${user.profile_created}</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td class="actions">
+                        <button class="btn-icon view-btn" onclick="viewUserDetails('${user.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-icon delete-btn" onclick="deleteUser('${user.id}')" title="Delete User">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            // Add to table and reset form
+            document.querySelector('#usersTable tbody').insertAdjacentHTML('afterbegin', userRow);
+            addUserForm.reset();
+            
+            // Refresh page after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            formError.textContent = data.error || 'Failed to create user';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        formError.textContent = 'An error occurred. Please try again.';
+    });
+});
+
+// Toast notification
+function showToast(message, type = 'info') {
+    // Check if toast container exists, if not create it
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+        
+        // Add styles for toast container
+        const style = document.createElement('style');
+        style.textContent = `
+            .toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            }
+            
+            .toast {
+                min-width: 250px;
+                margin-bottom: 10px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                animation: toastFadeIn 0.3s, toastFadeOut 0.3s 2.7s;
+                opacity: 0;
+                animation-fill-mode: forwards;
+            }
+            
+            .toast-success {
+                background-color: #28a745;
+                color: white;
+            }
+            
+            .toast-error {
+                background-color: #dc3545;
+                color: white;
+            }
+            
+            .toast-info {
+                background-color: var(--primary-color);
+                color: white;
+            }
+            
+            .toast-close {
+                cursor: pointer;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.2rem;
+                margin-left: 10px;
+                opacity: 0.8;
+            }
+            
+            .toast-close:hover {
+                opacity: 1;
+            }
+            
+            @keyframes toastFadeIn {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes toastFadeOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Create toast
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        ${message}
+        <button class="toast-close">&times;</button>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Close button functionality
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+        toast.remove();
+    });
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %} 

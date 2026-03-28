@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="result-container">
+    <div class="result-header">
+        <a href="{{ url_for('home') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+        <h1>
+            {% if status == 'valid' %}
+            <i class="fas fa-check-circle valid-icon"></i> Certificate Verified
+            {% else %}
+            <i class="fas fa-times-circle invalid-icon"></i> Invalid Certificate
+            {% endif %}
+        </h1>
+    </div>
+    
+    <div class="result-card">
+        <div class="result-info">
+            <div class="file-details">
+                <div class="file-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="file-text">
+                    <h3>{{ filename }}</h3>
+                    <p class="file-meta">{{ file_size }}</p>
+                </div>
+            </div>
+            
+            <div class="status-badge {% if status == 'valid' %}valid{% else %}invalid{% endif %}">
+                {% if status == 'valid' %}
+                <i class="fas fa-check-circle"></i> Valid Certificate
+                {% else %}
+                <i class="fas fa-times-circle"></i> Invalid Certificate
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="result-body">
+            <div class="section">
+                <h3>Verification Details</h3>
+                <div class="details-box">
+                    <p>{{ details }}</p>
+                </div>
+            </div>
+            
+            {% if links %}
+            <div class="section">
+                <h3>Links Detected</h3>
+                <div class="links-box">
+                    <ul>
+                        {% for link in links %}
+                        <li><a href="{{ link }}" target="_blank" rel="noopener noreferrer">{{ link }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if urls_in_text %}
+            <div class="section">
+                <h3>URLs Detected in Text</h3>
+                <div class="links-box">
+                    <ul>
+                        {% for url in urls_in_text %}
+                        <li><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="result-footer">
+            <div class="notification-box">
+                <div class="notification-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="notification-content">
+                    <h4>This is a temporary result</h4>
+                    <p>This verification result is temporary and will not be saved permanently. To keep a record of your verifications:</p>
+                    <div class="notification-actions">
+                        <a href="{{ url_for('login') }}" class="btn-action">
+                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn-action btn-outline">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.result-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: opacity 0.3s;
+}
+
+.btn-back:hover {
+    opacity: 0.8;
+}
+
+.result-header h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.valid-icon {
+    color: var(--success-color);
+}
+
+.invalid-icon {
+    color: var(--error-color);
+}
+
+.result-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    margin-bottom: 2rem;
+}
+
+.result-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.file-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(0,123,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.file-text h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.file-meta {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.status-badge.valid {
+    background-color: rgba(40,167,69,0.15);
+    color: var(--success-color);
+}
+
+.status-badge.invalid {
+    background-color: rgba(220,53,69,0.15);
+    color: var(--error-color);
+}
+
+.result-body {
+    padding: 1.5rem;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.section h3 {
+    margin: 0 0 1rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+.details-box {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    white-space: pre-line;
+}
+
+.details-box p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.links-box {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.links-box ul {
+    margin: 0;
+    padding: 0 0 0 1.5rem;
+}
+
+.links-box li {
+    margin-bottom: 0.75rem;
+    word-break: break-all;
+}
+
+.links-box a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.links-box a:hover {
+    text-decoration: underline;
+}
+
+.result-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.notification-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background-color: rgba(0,123,255,0.1);
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.notification-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-content h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.notification-content p {
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.btn-action.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-action.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .result-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .file-details {
+        width: 100%;
+    }
+    
+    .status-badge {
+        align-self: flex-start;
+    }
+    
+    .notification-box {
+        flex-direction: column;
+    }
+    
+    .notification-actions {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %} 

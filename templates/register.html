@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-header">
+        <i class="fas fa-user-plus fa-3x"></i>
+        <h1>Create Account</h1>
+        <p class="auth-subtitle">Join our community today</p>
+    </div>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+        {{ form.csrf_token }}
+        
+        <div class="form-group">
+            <div class="input-group">
+                <i class="fas fa-user input-icon"></i>
+                {{ form.username(class="form-control", placeholder="Choose a username") }}
+            </div>
+            {% if form.username.errors %}
+                {% for error in form.username.errors %}
+                    <span class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ error }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <div class="input-group">
+                <i class="fas fa-envelope input-icon"></i>
+                {{ form.email(class="form-control", placeholder="Enter your email") }}
+            </div>
+            {% if form.email.errors %}
+                {% for error in form.email.errors %}
+                    <span class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ error }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <div class="input-group">
+                <i class="fas fa-lock input-icon"></i>
+                {{ form.password(class="form-control", placeholder="Choose a password") }}
+            </div>
+            {% if form.password.errors %}
+                {% for error in form.password.errors %}
+                    <span class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ error }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <div class="input-group">
+                <i class="fas fa-lock input-icon"></i>
+                {{ form.password2(class="form-control", placeholder="Confirm your password") }}
+            </div>
+            {% if form.password2.errors %}
+                {% for error in form.password2.errors %}
+                    <span class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ error }}
+                    </span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i>
+            Create Account
+        </button>
+    </form>
+
+    <div class="auth-footer">
+        <p>Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></p>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    text-align: center;
+    margin: 6rem auto 3rem;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    background: var(--card-bg);
+    max-width: 500px;
+    position: relative;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header i {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.auth-subtitle {
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+.auth-form {
+    margin-top: 2rem;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.input-group .form-control {
+    padding-left: 2.5rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.auth-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.3s;
+}
+
+.auth-footer a:hover {
+    opacity: 0.8;
+}
+
+.error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.error i {
+    color: var(--error-color);
+}
+
+.btn i {
+    margin-right: 0.5rem;
+}
+
+.password-requirements {
+    font-size: 0.875rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,997 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-home-container">
+    <!-- Hero Welcome Section with Animated Background -->
+    <section class="hero-welcome">
+        <div class="animated-bg"></div>
+        <div class="hero-content">
+            <div class="admin-avatar">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h1 class="greeting">Welcome, {{ admin_name or 'Admin' }}</h1>
+            <p class="tagline">Certificate Verification System Portal</p>
+            <div class="time-display">
+                <div id="current-time">00:00:00</div>
+                <div id="current-date">Loading date...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Stats Overview with Animated Chart -->
+    <section class="stats-dashboard">
+        <h2><i class="fas fa-chart-line"></i> System Overview</h2>
+        
+        <div class="stats-cards">
+            <div class="stat-card" data-value="{{ total_users }}">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Total Users</h3>
+                    <div class="counter" data-target="{{ total_users }}">0</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" data-value="{{ total_verifications }}">
+                <div class="stat-icon">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Verifications</h3>
+                    <div class="counter" data-target="{{ total_verifications }}">0</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" data-value="{{ valid_certificates }}">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Valid Certificates</h3>
+                    <div class="counter" data-target="{{ valid_certificates }}">0</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" data-value="{{ total_verifications - valid_certificates }}">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-details">
+                    <h3>Invalid Certificates</h3>
+                    <div class="counter" data-target="{{ total_verifications - valid_certificates }}">0</div>
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chart Container -->
+        <div class="chart-container">
+            <canvas id="certificateChart"></canvas>
+        </div>
+    </section>
+
+    <!-- Admin Activity Center -->
+    <section class="activity-center">
+        <h2><i class="fas fa-tasks"></i> Admin Dashboard</h2>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <div class="action-details">
+                    <h3>User Management</h3>
+                    <p>Manage users and their verification records</p>
+                    <span class="more-info">View Users <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+            <a href="{{ url_for('admin_dashboard') }}#recentVerifications" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="action-details">
+                    <h3>Recent Activity</h3>
+                    <p>Monitor recent verification attempts</p>
+                    <span class="more-info">Check Activity <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+            <a href="#" class="action-card" id="system-health">
+                <div class="action-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="action-details">
+                    <h3>System Health</h3>
+                    <p>Check system performance and metrics</p>
+                    <span class="more-info">View Status <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+            <a href="#" class="action-card" id="admin-settings">
+                <div class="action-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="action-details">
+                    <h3>Settings</h3>
+                    <p>Configure system parameters and preferences</p>
+                    <span class="more-info">Open Settings <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Quick Insights Section -->
+    <section class="insights-section">
+        <h2><i class="fas fa-lightbulb"></i> System Insights</h2>
+        <div class="insights-cards">
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Daily Activity</h3>
+                </div>
+                <div class="insight-content" id="daily-activity">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Security Status</h3>
+                </div>
+                <div class="insight-content">
+                    <div class="status-indicator secure">
+                        <i class="fas fa-check-circle"></i>
+                        <span>System Secure</span>
+                    </div>
+                    <p>Last security scan: <span id="last-scan-time">Today, 09:45 AM</span></p>
+                    <ul class="security-stats">
+                        <li><i class="fas fa-lock"></i> Certificate encryption: <strong>Strong</strong></li>
+                        <li><i class="fas fa-user-shield"></i> User authentication: <strong>Secure</strong></li>
+                        <li><i class="fas fa-database"></i> Database integrity: <strong>Verified</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+/* Base Container Styles */
+.admin-home-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+section {
+    margin-bottom: 2.5rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-color);
+}
+
+section h2 i {
+    color: var(--primary-color);
+}
+
+/* Hero Section */
+.hero-welcome {
+    position: relative;
+    height: 300px;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.animated-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4a9eff, #357abd, #2980b9, #1f6dad);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    z-index: 1;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    backdrop-filter: blur(5px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.admin-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    animation: pulseAvatar 3s infinite;
+}
+
+.admin-avatar i {
+    font-size: 3rem;
+    color: white;
+}
+
+@keyframes pulseAvatar {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+.greeting {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    animation: fadeInUp 1s ease;
+}
+
+.tagline {
+    font-size: 1.4rem;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+    animation: fadeInUp 1.2s ease;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 1.2rem;
+    opacity: 0.9;
+    animation: fadeInUp 1.5s ease;
+}
+
+#current-time {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+#current-date {
+    font-size: 1rem;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stats Dashboard */
+.stats-dashboard {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon i {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+}
+
+.stat-details {
+    flex: 1;
+}
+
+.stat-details h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.counter {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 3px;
+    transition: width 2s ease-in-out;
+}
+
+.chart-container {
+    height: 300px;
+    width: 100%;
+    margin-top: 2rem;
+}
+
+/* Admin Activity Center */
+.activity-center {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.dashboard-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.action-icon {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(74, 158, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.action-icon i {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+}
+
+.action-details {
+    flex: 1;
+}
+
+.action-details h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.action-details p {
+    margin: 0 0 15px 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.more-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.more-info i {
+    transition: transform 0.3s ease;
+}
+
+.action-card:hover .more-info i {
+    transform: translateX(5px);
+}
+
+/* Insights Section */
+.insights-section {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.insights-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.insight-card {
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.insight-header {
+    background-color: rgba(74, 158, 255, 0.05);
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.insight-header i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.insight-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.insight-content {
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.loading-spinner i {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.status-indicator.secure {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.status-indicator i {
+    color: #28a745;
+    font-size: 1.2rem;
+}
+
+.status-indicator span {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.security-stats {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+}
+
+.security-stats li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.security-stats li i {
+    color: var(--primary-color);
+    width: 20px;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .hero-welcome {
+        height: 250px;
+    }
+    
+    .greeting {
+        font-size: 2rem;
+    }
+    
+    .admin-avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .admin-avatar i {
+        font-size: 2.2rem;
+    }
+    
+    section {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Update time and date
+function updateTime() {
+    const now = new Date();
+    
+    // Format time (HH:MM:SS)
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+    
+    // Format date (Day, Month Date, Year)
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = now.toLocaleDateString(undefined, options);
+}
+
+// Start time updates
+updateTime();
+setInterval(updateTime, 1000);
+
+// Animated counters
+const counters = document.querySelectorAll('.counter');
+const speed = 200;
+
+function animateCounters() {
+    counters.forEach(counter => {
+        const target = +counter.getAttribute('data-target');
+        const count = +counter.innerText;
+        const increment = target / speed;
+        
+        if(count < target) {
+            counter.innerText = Math.ceil(count + increment);
+            setTimeout(animateCounters, 20);
+        } else {
+            counter.innerText = target;
+        }
+    });
+}
+
+// Animate progress bars
+function animateProgressBars() {
+    const cards = document.querySelectorAll('.stat-card');
+    let max = 0;
+    
+    // Find the maximum value
+    cards.forEach(card => {
+        const value = parseInt(card.getAttribute('data-value'));
+        if (value > max) max = value;
+    });
+    
+    // Set progress width based on percentage of max
+    cards.forEach(card => {
+        const value = parseInt(card.getAttribute('data-value'));
+        const progressBar = card.querySelector('.progress');
+        const percentage = (value / max) * 100;
+        
+        setTimeout(() => {
+            progressBar.style.width = `${percentage}%`;
+        }, 500);
+    });
+}
+
+// Create chart
+function createChart() {
+    const ctx = document.getElementById('certificateChart').getContext('2d');
+    
+    // Get values from the DOM
+    const validCerts = parseInt(document.querySelector('.stat-card[data-value="{{ valid_certificates }}"]').getAttribute('data-value'));
+    const invalidCerts = parseInt(document.querySelector('.stat-card[data-value="{{ total_verifications - valid_certificates }}"]').getAttribute('data-value'));
+    
+    const certificateChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Valid Certificates', 'Invalid Certificates'],
+            datasets: [{
+                label: 'Certificate Verification Results',
+                data: [validCerts, invalidCerts],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1,
+                barPercentage: 0.5,
+                categoryPercentage: 0.7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        }
+    });
+}
+
+// Load daily activity data from API
+function loadDailyActivity() {
+    const dailyActivity = document.getElementById('daily-activity');
+    
+    // Show loading spinner
+    dailyActivity.innerHTML = `
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    `;
+    
+    // Fetch today's verification count
+    fetch('/api/stats/today_verifications')
+        .then(response => response.json())
+        .then(verifData => {
+            // Fetch today's new users count
+            return fetch('/api/stats/today_new_users')
+                .then(response => response.json())
+                .then(userData => {
+                    return { 
+                        verifications: verifData.count,
+                        newUsers: userData.count
+                    };
+                });
+        })
+        .then(stats => {
+            // Fetch recent activity
+            return fetch('/api/stats/recent_activity')
+                .then(response => response.json())
+                .then(activities => {
+                    return { 
+                        ...stats,
+                        activities: activities 
+                    };
+                });
+        })
+        .then(data => {
+            // Build the HTML content with real data
+            let activityHtml = `
+                <div class="activity-summary">
+                    <div class="activity-stat">
+                        <span class="activity-number">${data.verifications}</span>
+                        <span class="activity-label">Verifications Today</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="activity-number">${data.newUsers}</span>
+                        <span class="activity-label">New Users Today</span>
+                    </div>
+                </div>
+                <div class="activity-timeline">
+            `;
+            
+            // Add activity items if we have any
+            if (data.activities && data.activities.length > 0) {
+                data.activities.forEach(activity => {
+                    let iconClass = 'verify';
+                    let icon = 'fa-check';
+                    let statusClass = '';
+                    
+                    if (activity.type === 'user') {
+                        iconClass = 'user';
+                        icon = 'fa-user-plus';
+                    } else if (activity.status === 'valid') {
+                        iconClass = 'verify valid';
+                        icon = 'fa-check';
+                        statusClass = 'status-valid';
+                    } else if (activity.status === 'invalid') {
+                        iconClass = 'verify invalid';
+                        icon = 'fa-times';
+                        statusClass = 'status-invalid';
+                    } else {
+                        iconClass = 'verify pending';
+                        icon = 'fa-question';
+                        statusClass = 'status-pending';
+                    }
+                    
+                    activityHtml += `
+                        <div class="timeline-item ${statusClass}">
+                            <div class="timeline-icon ${iconClass}">
+                                <i class="fas ${icon}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <p class="activity-message">${activity.message}</p>
+                                ${activity.details ? `<p class="activity-details">${activity.details}</p>` : ''}
+                                <span class="timeline-time">${activity.time}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                // No activities found
+                activityHtml += `
+                    <div class="no-activity">
+                        <p>No recent activity found</p>
+                    </div>
+                `;
+            }
+            
+            activityHtml += `</div>`;
+            
+            // Add the styling
+            activityHtml += `
+                <style>
+                    .activity-summary {
+                        display: flex;
+                        justify-content: space-around;
+                        margin-bottom: 1.5rem;
+                    }
+                    
+                    .activity-stat {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                    }
+                    
+                    .activity-number {
+                        font-size: 2rem;
+                        font-weight: 700;
+                        color: var(--primary-color);
+                    }
+                    
+                    .activity-label {
+                        font-size: 0.9rem;
+                        color: var(--text-color);
+                        opacity: 0.7;
+                    }
+                    
+                    .activity-timeline {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1rem;
+                    }
+                    
+                    .timeline-item {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 1rem;
+                        padding: 10px;
+                        border-radius: 8px;
+                        border-left: 3px solid transparent;
+                        transition: background-color 0.3s ease;
+                    }
+                    
+                    .timeline-item:hover {
+                        background-color: rgba(0,0,0,0.03);
+                    }
+                    
+                    .timeline-item.status-valid {
+                        border-left-color: var(--success-color);
+                    }
+                    
+                    .timeline-item.status-invalid {
+                        border-left-color: var(--error-color);
+                    }
+                    
+                    .timeline-item.status-pending {
+                        border-left-color: var(--primary-color);
+                    }
+                    
+                    .timeline-icon {
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        font-size: 0.8rem;
+                        color: white;
+                    }
+                    
+                    .timeline-icon.verify {
+                        background-color: var(--primary-color);
+                    }
+                    
+                    .timeline-icon.verify.valid {
+                        background-color: var(--success-color);
+                    }
+                    
+                    .timeline-icon.verify.invalid {
+                        background-color: var(--error-color);
+                    }
+                    
+                    .timeline-icon.user {
+                        background-color: var(--success-color);
+                    }
+                    
+                    .timeline-content {
+                        flex: 1;
+                    }
+                    
+                    .timeline-content .activity-message {
+                        margin: 0 0 3px 0;
+                        color: var(--text-color);
+                        font-weight: 500;
+                    }
+                    
+                    .timeline-content .activity-details {
+                        margin: 0 0 5px 0;
+                        color: var(--text-color);
+                        font-size: 0.85rem;
+                        opacity: 0.7;
+                    }
+                    
+                    .timeline-time {
+                        font-size: 0.8rem;
+                        color: var(--text-color);
+                        opacity: 0.7;
+                    }
+                    
+                    .no-activity {
+                        text-align: center;
+                        color: var(--text-color);
+                        opacity: 0.7;
+                        padding: 1rem;
+                    }
+                </style>
+            `;
+            
+            // Update the content
+            dailyActivity.innerHTML = activityHtml;
+        })
+        .catch(error => {
+            // Show error message
+            dailyActivity.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load activity data</p>
+                </div>
+                <style>
+                    .error-message {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 150px;
+                        color: var(--error-color);
+                        text-align: center;
+                    }
+                    
+                    .error-message i {
+                        font-size: 2rem;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .error-message p {
+                        margin: 0;
+                    }
+                </style>
+            `;
+            console.error('Error loading activity data:', error);
+        });
+}
+
+// Add settings and system health modal behaviors
+document.getElementById('system-health').addEventListener('click', function(e) {
+    e.preventDefault();
+    alert('System Health Dashboard: Coming Soon! This feature will show detailed system metrics and performance data.');
+});
+
+document.getElementById('admin-settings').addEventListener('click', function(e) {
+    e.preventDefault();
+    alert('Admin Settings: Coming Soon! This feature will allow configuration of system parameters.');
+});
+
+// Initialize page animations when content is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Start counter animations
+    setTimeout(animateCounters, 500);
+    
+    // Animate progress bars
+    setTimeout(animateProgressBars, 500);
+    
+    // Initialize chart
+    setTimeout(createChart, 1000);
+    
+    // Load daily activity data
+    loadDailyActivity();
+});
+</script>
+{% endblock %} 

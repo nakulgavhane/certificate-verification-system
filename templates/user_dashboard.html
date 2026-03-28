@@ -1,0 +1,1021 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Hero Welcome Section -->
+    <div class="hero-welcome">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Welcome to Certificate Verification Service</h1>
+                <p class="hero-subtitle">Securely verify your certificates with our advanced validation system</p>
+                <p class="user-greeting">Hello, <span class="username">{{ current_user.username }}</span></p>
+            </div>
+            
+            <!-- Upload Certificate Form Card -->
+            <div class="upload-card">
+                <div class="upload-card-header">
+                    <h2><i class="fas fa-file-upload"></i> Upload Certificate</h2>
+                </div>
+                
+                <!-- File info display (initially hidden) -->
+                <div class="file-info-display" id="file-info-display" style="display: none;">
+                    <div class="file-info-content">
+                        <div class="file-info-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="file-info-text">
+                            <p class="file-name" id="info-filename">No file selected</p>
+                            <p class="file-size" id="info-filesize">0 KB</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form action="{{ url_for('upload_certificate') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                    <div class="form-info-box">
+                        <div class="info-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Supported formats: PDF, JPG, JPEG, PNG</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Maximum file size: 5MB</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="file-input-container">
+                            <input type="file" name="certificate" id="certificate" class="file-input" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <label for="certificate" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose a file or drag it here</span>
+                            </label>
+                            <div class="file-size-error" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                File size exceeds 5MB limit!
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload progress bar (hidden by default) -->
+                    <div class="upload-progress" style="display: none;">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="upload-progress-bar"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="progress-percentage">0%</span> - Uploading <span id="progress-filename"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload success message (hidden by default) -->
+                    <div class="upload-success" style="display: none;">
+                        <div class="success-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="success-message">
+                            <h4>Upload Successful!</h4>
+                            <p>File: <span id="success-filename"></span></p>
+                            <p>Size: <span id="success-filesize"></span></p>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary upload-btn" id="submit-btn">
+                        <i class="fas fa-check"></i> Verify Certificate
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Info Boxes -->
+    <div class="info-section">
+        <h2 class="section-title"><i class="fas fa-chart-line"></i> Your Verification Summary</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Total Verifications</h3>
+                    <p class="info-value">{{ verified|length + non_verified|length }}</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon valid">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Valid Certificates</h3>
+                    <p class="info-value">{{ verified|length }}</p>
+                </div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon invalid">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="info-content">
+                    <h3>Invalid Certificates</h3>
+                    <p class="info-value">{{ non_verified|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification History Tabs -->
+    <div class="verification-section">
+        <h2 class="section-title"><i class="fas fa-history"></i> Your Certificate History</h2>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="verified">Valid Certificates ({{ verified|length }})</button>
+            <button class="tab-btn" data-tab="non-verified">Invalid Certificates ({{ non_verified|length }})</button>
+        </div>
+        
+        <div id="verified-tab" class="tab-content active">
+            {% if verified %}
+                <div class="verification-grid">
+                    {% for verification in verified %}
+                    <div class="verification-card">
+                        <div class="verification-header">
+                            <span class="status-badge valid">
+                                <i class="fas fa-check-circle"></i> Valid
+                            </span>
+                            <span class="verification-date">
+                                <i class="far fa-calendar-alt"></i>
+                                {{ verification.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                        <div class="verification-body">
+                            <h3>{{ verification.filename }}</h3>
+                            <p class="details">{{ verification.details[:100] }}{% if verification.details|length > 100 %}...{% endif %}</p>
+                            {% if verification.file_size %}
+                            <p class="file-size">
+                                <i class="fas fa-file-alt"></i> Size: {{ verification.file_size }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="verification-footer">
+                            <a href="{{ url_for('view_verification', id=verification.id) }}" class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt fa-3x"></i>
+                    <p>No verified certificates yet.</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div id="non-verified-tab" class="tab-content">
+            {% if non_verified %}
+                <div class="verification-grid">
+                    {% for verification in non_verified %}
+                    <div class="verification-card">
+                        <div class="verification-header">
+                            <span class="status-badge invalid">
+                                <i class="fas fa-times-circle"></i> Invalid
+                            </span>
+                            <span class="verification-date">
+                                <i class="far fa-calendar-alt"></i>
+                                {{ verification.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                        <div class="verification-body">
+                            <h3>{{ verification.filename }}</h3>
+                            <p class="details">{{ verification.details[:100] }}{% if verification.details|length > 100 %}...{% endif %}</p>
+                            {% if verification.file_size %}
+                            <p class="file-size">
+                                <i class="fas fa-file-alt"></i> Size: {{ verification.file_size }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="verification-footer">
+                            <a href="{{ url_for('view_verification', id=verification.id) }}" class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt fa-3x"></i>
+                    <p>No non-verified certificates yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Hero Welcome Section */
+.hero-welcome {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 12px;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+[data-theme="dark"] .hero-welcome,
+[data-theme="dark"] .cta-section {
+    background: #2d2d2d;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.hero-text {
+    margin-bottom: 2.5rem;
+}
+
+.hero-welcome h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.user-greeting {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    color: var(--text-color);
+}
+
+.user-greeting .username {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Upload Card */
+.upload-card {
+    background: rgba(0, 123, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    color: var(--text-color);
+    max-width: 700px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .upload-card {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border: none;
+}
+
+.upload-card-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.upload-card-header h2 {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* File info display */
+.file-info-display {
+    background-color: rgba(0,123,255,0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--primary-color);
+}
+
+.file-info-content {
+    display: flex;
+    align-items: center;
+}
+
+.file-info-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(0,123,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.file-info-text {
+    flex: 1;
+}
+
+.file-info-text .file-name {
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.file-info-text .file-size {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.form-info-box {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+[data-theme="dark"] .form-info-box {
+    background-color: rgba(0,123,255,0.1);
+    border: none;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.info-item:last-child {
+    justify-content: flex-end;
+}
+
+/* File Input Styles */
+.file-input-container {
+    position: relative;
+    margin-top: 0.5rem;
+}
+
+.file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 2rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+[data-theme="dark"] .file-label {
+    background-color: #3d3d3d;
+}
+
+.file-label:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(0,123,255,0.05);
+}
+
+[data-theme="dark"] .file-label:hover {
+    background-color: #4a4a4a;
+}
+
+.file-label i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.file-label span {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.file-size-error {
+    color: var(--error-color);
+    margin-top: 0.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.upload-btn {
+    margin-top: 1rem;
+    padding: 1rem;
+}
+
+/* Info Section */
+.info-section {
+    margin: 3rem 0;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.section-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    display: flex;
+    align-items: center;
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s;
+}
+
+.info-card:hover {
+    transform: translateY(-5px);
+}
+
+.info-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(0,123,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.info-icon i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.info-icon.valid {
+    background: rgba(40,167,69,0.1);
+}
+
+.info-icon.valid i {
+    color: var(--success-color);
+}
+
+.info-icon.invalid {
+    background: rgba(220,53,69,0.1);
+}
+
+.info-icon.invalid i {
+    color: var(--error-color);
+}
+
+.info-content h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.info-value {
+    margin: 0.5rem 0 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/* Verification Section Styles */
+.verification-section {
+    margin: 3rem 0;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.tab-btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.05);
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+    opacity: 1;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.verification-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.verification-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.verification-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.verification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.valid {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-badge.invalid {
+    background: var(--error-color);
+    color: white;
+}
+
+.verification-date {
+    font-size: 0.875rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.verification-body h3 {
+    margin: 0 0 0.5rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.verification-body .details {
+    color: var(--text-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.verification-body .file-size {
+    color: var(--text-color);
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 0.7;
+}
+
+.verification-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: var(--bg-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.empty-state i {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    margin: 0;
+    opacity: 0.8;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Upload Progress Bar */
+.upload-progress {
+    margin: 1.5rem 0;
+    background: var(--bg-color);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.progress-container {
+    background-color: #f8f9fa;
+    height: 1rem;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), #0056b3);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Upload Success Message */
+.upload-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(40,167,69,0.1);
+    border: 1px solid var(--success-color);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    animation: fadeIn 0.5s ease;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.success-icon {
+    font-size: 2.5rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.success-message {
+    text-align: center;
+}
+
+.success-message h4 {
+    color: var(--success-color);
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+}
+
+.success-message p {
+    margin: 0.35rem 0;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (min-width: 992px) {
+    .hero-content {
+        flex-direction: row;
+        align-items: center;
+        gap: 3rem;
+        text-align: left;
+    }
+    
+    .hero-text {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .upload-card {
+        flex: 1.5;
+        margin: 0;
+    }
+    
+    .hero-welcome {
+        text-align: left;
+    }
+}
+</style>
+
+<script>
+// Tab switching functionality
+document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding content
+        button.classList.add('active');
+        document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+    });
+});
+
+// File size validation
+const fileInput = document.getElementById('certificate');
+const submitBtn = document.getElementById('submit-btn');
+const fileLabel = document.querySelector('.file-label');
+const fileSizeError = document.querySelector('.file-size-error');
+const uploadForm = document.querySelector('.upload-form');
+const uploadProgress = document.querySelector('.upload-progress');
+const progressBar = document.getElementById('upload-progress-bar');
+const progressPercentage = document.getElementById('progress-percentage');
+const progressFilename = document.getElementById('progress-filename');
+const uploadSuccess = document.querySelector('.upload-success');
+const successFilename = document.getElementById('success-filename');
+const successFilesize = document.getElementById('success-filesize');
+const fileInfoDisplay = document.getElementById('file-info-display');
+const infoFilename = document.getElementById('info-filename');
+const infoFilesize = document.getElementById('info-filesize');
+
+// Max file size: 5MB in bytes
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+fileInput.addEventListener('change', function() {
+    const isValid = validateFileSize();
+    
+    if (isValid) {
+        // Hide file info display
+        fileInfoDisplay.style.display = 'none';
+        
+        // Show progress bar and hide success message
+        uploadProgress.style.display = 'block';
+        uploadSuccess.style.display = 'none';
+        
+        const file = fileInput.files[0];
+        // Update filename in progress bar
+        progressFilename.textContent = file.name;
+        
+        // Simulate upload progress
+        simulateUploadProgress();
+    }
+});
+
+function validateFileSize() {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = file.size;
+        const fileName = file.name;
+        
+        // Format file size for display
+        let formattedSize;
+        if (fileSize < 1024) {
+            formattedSize = `${fileSize} bytes`;
+        } else if (fileSize < 1024 * 1024) {
+            formattedSize = `${(fileSize / 1024).toFixed(2)} KB`;
+        } else {
+            formattedSize = `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        
+        // Update file info display
+        infoFilename.textContent = fileName;
+        infoFilesize.textContent = formattedSize;
+        fileInfoDisplay.style.display = 'block';
+        
+        if (fileSize > MAX_FILE_SIZE) {
+            fileSizeError.style.display = 'block';
+            submitBtn.disabled = true;
+            fileLabel.style.borderColor = 'var(--error-color)';
+            return false;
+        } else {
+            fileSizeError.style.display = 'none';
+            submitBtn.disabled = false;
+            fileLabel.style.borderColor = 'var(--success-color)';
+            
+            // Update file name display
+            fileLabel.querySelector('span').textContent = fileName;
+            return true;
+        }
+    } else {
+        // Hide file info if no file selected
+        fileInfoDisplay.style.display = 'none';
+        return false;
+    }
+}
+
+// Form submission handling
+uploadForm.addEventListener('submit', function(e) {
+    // Form will submit normally if file is valid
+    // No need to prevent default or simulate upload again
+});
+
+function simulateUploadProgress() {
+    let progress = 0;
+    progressBar.style.width = '0%';
+    progressPercentage.textContent = '0%';
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 5;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            // Show success message
+            setTimeout(() => {
+                showUploadSuccess();
+            }, 500);
+        }
+        
+        // Update progress bar
+        progressBar.style.width = `${progress}%`;
+        progressPercentage.textContent = `${Math.round(progress)}%`;
+    }, 100);
+}
+
+function showUploadSuccess() {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        // Format file size
+        let formattedSize;
+        if (file.size < 1024) {
+            formattedSize = `${file.size} bytes`;
+        } else if (file.size < 1024 * 1024) {
+            formattedSize = `${(file.size / 1024).toFixed(2)} KB`;
+        } else {
+            formattedSize = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        
+        // Update success message
+        successFilename.textContent = file.name;
+        successFilesize.textContent = formattedSize;
+        
+        // Hide progress and show success
+        uploadProgress.style.display = 'none';
+        uploadSuccess.style.display = 'flex';
+    }
+}
+
+// Drag and drop functionality
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    fileLabel.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    fileLabel.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    fileLabel.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    fileLabel.style.borderColor = 'var(--primary-color)';
+    fileLabel.style.backgroundColor = 'rgba(0,123,255,0.1)';
+}
+
+function unhighlight(e) {
+    if (!fileInput.files.length) {
+        fileLabel.style.borderColor = 'var(--border-color)';
+        fileLabel.style.backgroundColor = '#f8f9fa';
+    }
+}
+
+fileLabel.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    
+    const isValid = validateFileSize();
+    
+    if (isValid) {
+        // Hide file info display
+        fileInfoDisplay.style.display = 'none';
+        
+        // Show progress bar and hide success message
+        uploadProgress.style.display = 'block';
+        uploadSuccess.style.display = 'none';
+        
+        const file = fileInput.files[0];
+        // Update filename in progress bar
+        progressFilename.textContent = file.name;
+        
+        // Simulate upload progress
+        simulateUploadProgress();
+    }
+}
+</script>
+{% endblock %} 
