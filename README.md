@@ -1,56 +1,82 @@
 # Certificate Verification System
 
-Web app that detects fake certificates by scanning QR codes, extracting URLs from PDFs/images via OCR, and validating links. Built as a final year B.E. project.
+AI-powered fake certificate detection using Vision LLM, QR scanning, OCR, and RAG-based cross-verification. Final year B.E. project.
 
 ## What it does
 
-- Upload a certificate (PDF or image)
-- System extracts embedded links from PDF, decodes QR codes, or runs OCR to find URLs
-- Validates each URL by making parallel HTTP requests
-- Reports whether the certificate is valid or fake based on link accessibility
-- Full user system with admin dashboard, verification history, and audit trail
+1. Upload a certificate (PDF or image)
+2. **Vision LLM** (LLaVA) extracts holder name, certificate title, issuing authority, dates, QR codes, and URLs from the document
+3. QR codes are decoded and text is OCR'd as fallback extraction methods
+4. **RAG pipeline** cross-verifies the extracted data against issuing authority websites:
+   - Checks if the holder name appears on the verification page
+   - Matches certificate title and issuing authority
+   - Validates expiry dates
+5. **Text LLM** (Qwen 2.5) produces a final verdict with confidence score
+6. Supports **bulk verification** for checking certificates listed on resumes
 
-## How verification works
+## Verification Pipeline
 
-**PDFs:** Extracts hyperlinks from pages + scans text for URLs using regex. Validates each URL concurrently.
+```
+Certificate Upload
+       |
+       v
+Vision LLM (LLaVA) --> Extract: name, title, authority, dates, URLs
+       |                          |
+       |                    QR Decode / OCR (fallback)
+       v                          |
+   URL Validation <---------------+
+       |
+       v
+RAG Cross-Verification --> Fetch issuer pages, match extracted data
+       |
+       v
+Text LLM (Qwen 2.5) --> Final verdict + confidence score
+```
 
-**Images:** Tries QR code decoding (pyzbar) first. If no QR found, runs Tesseract OCR to extract text and find URLs.
-
-A certificate is marked **valid** if any extracted URL returns HTTP 200.
+A certificate is marked **valid** if:
+- Extracted URLs are reachable AND holder name/title matches on the verification page (high confidence)
+- URLs reachable with partial matches (medium confidence)
+- URLs reachable but no data match on page (low confidence)
 
 ## Tech Stack
 
-- **Backend**: Flask, Flask-Login, Flask-SQLAlchemy, Flask-WTF
+- **Backend**: Flask, Flask-Login, Flask-SQLAlchemy
 - **Database**: SQLite
+- **Vision AI**: LLaVA via Ollama (certificate image analysis)
+- **Text LLM**: Qwen 2.5 via Ollama (final verdict generation)
 - **QR**: pyzbar
 - **OCR**: Tesseract (pytesseract)
-- **PDF**: PyMuPDF (fitz)
-- **Image**: Pillow
-- **URL Validation**: requests + concurrent.futures (ThreadPoolExecutor)
+- **PDF**: PyMuPDF
+- **URL Validation**: requests + concurrent.futures
 
 ## Project Structure
 
 ```
-app.py            # Flask app (routes, auth, verification logic)
+app.py            # Flask routes, auth, verification endpoints
 models.py         # SQLAlchemy models (User, VerificationHistory, Verification)
 forms.py          # WTForms (Login, Registration, Profile)
-qr_scanner.py     # Verification engine (QR + OCR + URL validation)
+qr_scanner.py     # Core verification engine (Vision LLM + RAG + QR + OCR)
 requirements.txt  # Dependencies
-templates/        # Jinja2 HTML templates (12 files)
+templates/        # Jinja2 templates
 ```
 
 ## Setup
 
 ```bash
+# Install Ollama and pull models
+ollama pull llava:7b
+ollama pull qwen2.5:7b-instruct
+
+# Install Python dependencies
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+
+# Run
 python app.py
 ```
 
 Requires [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) installed.
-
-Default admin: dmin / dmin
 
 ## Impact
 
