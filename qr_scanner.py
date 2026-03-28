@@ -1,187 +1,323 @@
+"""
+AI-Powered Certificate Verification Engine
+Uses Vision LLM for document analysis and RAG for cross-verification
+"""
+
+import os
+import re
+import json
+import requests
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
+
 try:
-    import fitz  # PyMuPDF for handling PDFs
+    import fitz  # PyMuPDF
 except ImportError:
     try:
-        import pymupdf as fitz  # Alternative import name
+        import pymupdf as fitz
     except ImportError:
-        from PyMuPDF import fitz  # Another possible import
+        from PyMuPDF import fitz
 
-import re  # To detect URLs in text
-from pyzbar.pyzbar import decode
 from PIL import Image
-import tempfile
-import os
+from pyzbar.pyzbar import decode
 import pytesseract
-import requests
-from urllib.parse import urlparse
-from requests.exceptions import RequestException
-import concurrent.futures
+import tempfile
 
-# Configure Tesseract path
-if os.name == 'nt':  # Windows
+if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+# Ollama config for local Vision LLM
+OLLAMA_BASE_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+VISION_MODEL = os.environ.get('VISION_MODEL', 'llava:7b')
+TEXT_MODEL = os.environ.get('TEXT_MODEL', 'qwen2.5:7b-instruct')
+
+
+def extract_with_vision_llm(image_path):
+    """Use Vision LLM to extract structured data from certificate image."""
+    import base64
+    with open(image_path, 'rb') as f:
+        image_b64 = base64.b64encode(f.read()).decode()
+
+    prompt = (
+        "Extract the following from this certificate image. "
+        "Return JSON with keys: holder_name, certificate_title, "
+        "issuing_authority, issue_date, expiry_date, certificate_id, "
+        "qr_detected (bool), urls_found (list). "
+        "If a field is not found, set it to null."
+    )
+
+    try:
+        resp = requests.post(f'{OLLAMA_BASE_URL}/api/generate', json={
+            'model': VISION_MODEL,
+            'prompt': prompt,
+            'images': [image_b64],
+            'stream': False
+        }, timeout=60)
+
+        if resp.status_code == 200:
+            text = resp.json().get('response', '')
+            # Try to parse JSON from response
+            json_match = re.search(r'\{.*\}', text, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+    except Exception as e:
+        print(f"Vision LLM extraction failed: {e}")
+
+    return None
+
+
+def cross_verify_with_rag(extracted_data, urls):
+    """RAG pipeline: cross-verify extracted certificate data against issuer websites."""
+    if not extracted_data or not urls:
+        return {'verified': False, 'reason': 'Insufficient data for cross-verification'}
+
+    holder_name = extracted_data.get('holder_name', '')
+    cert_title = extracted_data.get('certificate_title', '')
+    issuer = extracted_data.get('issuing_authority', '')
+
+    verification_results = []
+
+    for url in urls:
+        try:
+            resp = requests.get(url, timeout=10, allow_redirects=True)
+            if resp.status_code >= 400:
+                continue
+
+            page_text = resp.text.lower()
+
+            # Check if holder name appears on the verification page
+            name_match = holder_name and holder_name.lower() in page_text
+            # Check if certificate title matches
+            title_match = cert_title and cert_title.lower() in page_text
+            # Check if issuer matches
+            issuer_match = issuer and issuer.lower() in page_text
+
+            match_score = sum([name_match, title_match, issuer_match])
+
+            verification_results.append({
+                'url': url,
+                'reachable': True,
+                'name_match': name_match,
+                'title_match': title_match,
+                'issuer_match': issuer_match,
+                'match_score': match_score
+            })
+        except Exception:
+            verification_results.append({
+                'url': url, 'reachable': False,
+                'match_score': 0
+            })
+
+    if not verification_results:
+        return {'verified': False, 'reason': 'No URLs could be reached'}
+
+    best = max(verification_results, key=lambda x: x['match_score'])
+
+    if best['match_score'] >= 2:
+        return {
+            'verified': True,
+            'confidence': 'high',
+            'reason': f"Holder name and certificate details confirmed on {best['url']}",
+            'details': verification_results
+        }
+    elif best['match_score'] == 1:
+        return {
+            'verified': True,
+            'confidence': 'medium',
+            'reason': f"Partial match found on {best['url']}",
+            'details': verification_results
+        }
+    elif any(r['reachable'] for r in verification_results):
+        return {
+            'verified': True,
+            'confidence': 'low',
+            'reason': 'URLs are reachable but certificate details not confirmed on page',
+            'details': verification_results
+        }
+
+    return {'verified': False, 'reason': 'No matching data found', 'details': verification_results}
+
+
+def llm_analyze_certificate(extracted_data, rag_result):
+    """Use text LLM to produce final analysis combining vision extraction and RAG results."""
+    prompt = f"""Analyze this certificate verification:
+
+Extracted Data: {json.dumps(extracted_data, default=str)}
+Cross-Verification Result: {json.dumps(rag_result, default=str)}
+
+Provide a brief verdict: is this certificate likely VALID or FAKE? 
+Give reasoning in 2-3 sentences."""
+
+    try:
+        resp = requests.post(f'{OLLAMA_BASE_URL}/api/generate', json={
+            'model': TEXT_MODEL,
+            'prompt': prompt,
+            'stream': False
+        }, timeout=30)
+
+        if resp.status_code == 200:
+            return resp.json().get('response', 'Analysis unavailable')
+    except Exception:
+        pass
+
+    return 'LLM analysis unavailable - using rule-based verification'
+
+
 def is_valid_url(url, timeout=5):
-    """
-    Check if a URL is valid and leads to a functional webpage.
-    Returns True if the URL returns a successful status code, False otherwise.
-    """
-    # Ensure URL has a proper protocol
+    """Check if a URL is valid and leads to a functional webpage."""
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
-    
     try:
-        # Parse the URL to check if it has a valid domain
-        parsed_url = urlparse(url)
-        if not parsed_url.netloc:
+        parsed = urlparse(url)
+        if not parsed.netloc:
             return False
-        
-        # Try to get the webpage with a timeout
-        response = requests.get(url, timeout=timeout, allow_redirects=True)
-        
-        # Check if the response status code indicates success
-        return response.status_code < 400
-    except RequestException:
+        resp = requests.get(url, timeout=timeout, allow_redirects=True)
+        return resp.status_code < 400
+    except Exception:
         return False
 
+
 def validate_urls(urls_list):
-    """
-    Validate a list of URLs using parallel requests to improve performance.
-    Returns a list of valid URLs.
-    """
+    """Validate a list of URLs using parallel requests."""
     if not urls_list:
         return []
-    
-    valid_urls = []
-    
-    # Use a thread pool to check URLs concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        # Submit all URL validation tasks
-        future_to_url = {executor.submit(is_valid_url, url): url for url in urls_list}
-        
-        # Process results as they complete
-        for future in concurrent.futures.as_completed(future_to_url):
-            url = future_to_url[future]
+    valid = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_map = {executor.submit(is_valid_url, url): url for url in urls_list}
+        for future in future_map:
+            url = future_map[future]
             try:
                 if future.result():
-                    valid_urls.append(url)
+                    valid.append(url)
             except Exception:
-                # Skip any URLs that caused exceptions
                 pass
-                
-    return valid_urls
+    return valid
+
 
 def verify_certificate(file):
+    """Main verification pipeline: Vision LLM -> URL extraction -> RAG cross-verification -> LLM analysis."""
     filename = file.filename.lower()
 
-    # Create a temporary directory
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        temp_path = os.path.join(tmpdirname, filename)
-        file.save(temp_path)  # Save file regardless of type
+    with tempfile.TemporaryDirectory() as tmpdir:
+        temp_path = os.path.join(tmpdir, filename)
+        file.save(temp_path)
+
+        extracted_data = None
+        all_urls = []
+        all_links = []
 
         if filename.endswith('.pdf'):
-            # Open the PDF and search for links and text
-            pdf_document = fitz.open(temp_path)
-            links = []
-            text_with_urls = []
+            doc = fitz.open(temp_path)
 
-            # Loop through all pages in the PDF and extract links
-            for page_num in range(pdf_document.page_count):
-                page = pdf_document[page_num]
-                
-                # Search for explicit links
-                links_on_page = page.get_links()
-                for link in links_on_page:
-                    uri = link.get('uri', None)
+            for page_num in range(doc.page_count):
+                page = doc[page_num]
+
+                # Extract embedded hyperlinks
+                for link in page.get_links():
+                    uri = link.get('uri')
                     if uri:
-                        links.append(uri)
-                
-                # Search for URLs in the text
-                text = page.get_text("text")
-                # Fixed regex pattern with correct character class syntax
-                urls_in_text = re.findall(r'(?:https?://)?[-\w]+(?:\.[-\w]+)+(?:/[-\w./?=%&]*)?', text)
-                text_with_urls.extend(urls_in_text)
+                        all_links.append(uri)
 
-            # Clean up by closing the PDF
-            pdf_document.close()
+                # Extract text URLs via regex
+                text = page.get_text('text')
+                urls_in_text = re.findall(
+                    r'(?:https?://)?[-\w]+(?:\.[-\w]+)+(?:/[-\w./?=%&]*)?', text
+                )
+                all_urls.extend(urls_in_text)
 
-            # Validate all found links
-            valid_links = validate_urls(links)
-            valid_text_urls = validate_urls(text_with_urls)
-            
-            # Determine certificate validity based on link validation
-            if valid_links or valid_text_urls:
-                return {
-                    "status": "valid",
-                    "details": "Valid links found",
-                    "links": valid_links,
-                    "urls_in_text": valid_text_urls
-                }
-            elif links or text_with_urls:
-                return {
-                    "status": "invalid",
-                    "details": "Links found but none are valid (not accessible web pages)",
-                    "links": links,
-                    "urls_in_text": text_with_urls
-                }
-            else:
-                return {"status": "invalid", "details": "No links or URLs found in the PDF"}
+                # Render page as image for Vision LLM
+                if not extracted_data:
+                    pix = page.get_pixmap(dpi=200)
+                    img_path = os.path.join(tmpdir, f'page_{page_num}.png')
+                    pix.save(img_path)
+                    extracted_data = extract_with_vision_llm(img_path)
+
+                    # Also try QR from rendered image
+                    try:
+                        img = Image.open(img_path)
+                        qr_codes = decode(img)
+                        for qr in qr_codes:
+                            data = qr.data.decode('utf-8')
+                            if re.match(r'(?:https?://)?[-\w]+(?:\.[-\w]+)+', data):
+                                all_urls.append(data)
+                    except Exception:
+                        pass
+
+            doc.close()
 
         else:
-            # Handle image files
+            # Image file
             try:
                 img = Image.open(temp_path)
-                
-                # First try to decode QR codes
-                decoded_objects = decode(img)
-                if decoded_objects:
-                    qr_data = []
-                    valid_qr_urls = []
-                    
-                    for obj in decoded_objects:
-                        data = obj.data.decode("utf-8")
-                        qr_data.append(data)
-                        
-                        # Check if QR contains a URL
-                        if re.match(r'(?:https?://)?[-\w]+(?:\.[-\w]+)+(?:/[-\w./?=%&]*)?', data):
-                            if is_valid_url(data):
-                                valid_qr_urls.append(data)
-                    
-                    if valid_qr_urls:
-                        return {
-                            "status": "valid",
-                            "details": "Valid URLs found in QR code",
-                            "urls_in_text": valid_qr_urls
-                        }
-                    else:
-                        return {
-                            "status": "invalid",
-                            "details": "QR code found but contains no valid URLs",
-                            "urls_in_text": qr_data
-                        }
-                
-                # If no QR code found, try OCR to extract text and find URLs
+
+                # QR code scan
+                qr_codes = decode(img)
+                for qr in qr_codes:
+                    data = qr.data.decode('utf-8')
+                    if re.match(r'(?:https?://)?[-\w]+(?:\.[-\w]+)+', data):
+                        all_urls.append(data)
+
+                # OCR fallback for URL extraction
                 text = pytesseract.image_to_string(img)
-                # Fixed regex pattern with correct character class syntax
-                urls_in_text = re.findall(r'(?:https?://)?[-\w]+(?:\.[-\w]+)+(?:/[-\w./?=%&]*)?', text)
-                
-                # Validate extracted URLs
-                valid_urls = validate_urls(urls_in_text)
-                
-                if valid_urls:
-                    return {
-                        "status": "valid",
-                        "details": "Valid URLs found in image",
-                        "urls_in_text": valid_urls
-                    }
-                elif urls_in_text:
-                    return {
-                        "status": "invalid",
-                        "details": "URLs found in image but none are valid",
-                        "urls_in_text": urls_in_text
-                    }
-                else:
-                    return {"status": "invalid", "details": "No URLs or QR codes found in the image"}
-                    
+                urls_in_text = re.findall(
+                    r'(?:https?://)?[-\w]+(?:\.[-\w]+)+(?:/[-\w./?=%&]*)?', text
+                )
+                all_urls.extend(urls_in_text)
+
+                # Vision LLM extraction
+                extracted_data = extract_with_vision_llm(temp_path)
+
             except Exception as e:
-                return {"status": "error", "details": f"Error processing file: {str(e)}"}
+                return {'status': 'error', 'details': f'Error processing file: {e}'}
+
+        # Merge all discovered URLs
+        combined_urls = list(set(all_links + all_urls))
+        if extracted_data and extracted_data.get('urls_found'):
+            combined_urls.extend(extracted_data['urls_found'])
+        combined_urls = list(set(combined_urls))
+
+        # Validate URLs
+        valid_urls = validate_urls(combined_urls)
+
+        # RAG cross-verification
+        rag_result = cross_verify_with_rag(extracted_data, valid_urls)
+
+        # LLM final analysis
+        llm_verdict = llm_analyze_certificate(extracted_data, rag_result)
+
+        # Build result
+        if rag_result.get('verified') and rag_result.get('confidence') in ('high', 'medium'):
+            status = 'valid'
+        elif valid_urls:
+            status = 'valid'
+        else:
+            status = 'invalid'
+
+        return {
+            'status': status,
+            'details': llm_verdict,
+            'extracted_data': extracted_data,
+            'cross_verification': rag_result,
+            'links': valid_urls,
+            'urls_in_text': combined_urls,
+            'all_links_found': len(combined_urls),
+            'valid_links_found': len(valid_urls)
+        }
+
+
+def verify_certificates_bulk(files):
+    """Bulk verification for checking certificates listed on resumes."""
+    results = []
+    for f in files:
+        result = verify_certificate(f)
+        result['filename'] = f.filename
+        results.append(result)
+
+    summary = {
+        'total': len(results),
+        'valid': sum(1 for r in results if r['status'] == 'valid'),
+        'invalid': sum(1 for r in results if r['status'] == 'invalid'),
+        'errors': sum(1 for r in results if r['status'] == 'error'),
+        'results': results
+    }
+    return summary
